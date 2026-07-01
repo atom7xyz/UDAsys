@@ -18,9 +18,10 @@ class Receiver:
         self.___buffer = []
         self.__base_channel = root
         self.___stop = Event()
-        self.___sub = threading.Thread(target=lambda: self.run_subscriber(conf), daemon=True)
-        self.___querier = threading.Thread(target=lambda: self.run_querier(conf), daemon=True)
-        self.___stats = threading.Thread(target=lambda: self.run_stats(conf), daemon=True)
+        self.___session = zenoh.open(conf)
+        self.___sub = threading.Thread(target=self.run_subscriber, daemon=True)
+        self.___querier = threading.Thread(target=self.run_querier, daemon=True)
+        self.___stats = threading.Thread(target=self.run_stats, daemon=True)
         self.___sem = Semaphore()
         self.___sub.start()
         self.___querier.start()
@@ -75,41 +76,37 @@ class Receiver:
                 }
         return json.dumps(result)
 
-    def run_querier(self, config):
-        with zenoh.open(config) as session:
-            query_selector = zenoh.Selector(f"{self.__base_channel}/**")
-            querier = session.declare_querier(query_selector.key_expr)
-            parameters = ""
-            for reply in querier.get(parameters=parameters):
-                if self.___stop.is_set():
-                    return
-                if ro := reply.ok:
-                    self.write(ro.payload.to_string())
-                else:
-                    print_exception(Exception(reply.err.payload.to_string()))
+    def run_querier(self):
+        query_selector = zenoh.Selector(f"{self.__base_channel}/**")
+        querier = self.___session.declare_querier(query_selector.key_expr)
+        parameters = ""
+        for reply in querier.get(parameters=parameters):
+            if self.___stop.is_set():
+                return
+            if ro := reply.ok:
+                self.write(ro.payload.to_string())
+            else:
+                print_exception(Exception(reply.err.payload.to_string()))
 
-    def run_stats(self, config):
-        with zenoh.open(config) as session:
-            key = f"stats/{self.__base_channel}"
-            queryable = session.declare_queryable(key)
-            while not self.___stop.is_set():
-                query = queryable.try_recv()
-                if query is None:
-                    time.sleep(0.1)
-                    continue
-                with query:
-                    query.reply(key, self.aggregate(str(query.parameters)))
+    def run_stats(self):
+        key = f"stats/{self.__base_channel}"
+        queryable = self.___session.declare_queryable(key)
+        while not self.___stop.is_set():
+            query = queryable.try_recv()
+            if query is None:
+                time.sleep(0.1)
+                continue
+            with query:
+                query.reply(key, self.aggregate(str(query.parameters)))
 
-    def run_subscriber(self, config):
-        with zenoh.open(config) as session:
+    def run_subscriber(self):
+        def listener(sample: zenoh.Sample):
+            self.write(sample.payload.to_string())
 
-            def listener(sample: zenoh.Sample):
-                self.write(sample.payload.to_string())
+        sub = self.___session.declare_subscriber(self.__base_channel, listener)
 
-            sub = session.declare_subscriber(self.__base_channel, listener)
-
-            while not self.___stop.wait(0.2):
-                pass
+        while not self.___stop.wait(0.2):
+            pass
 
     def signal(self):
         self.___stop.set()
@@ -119,3 +116,4 @@ class Receiver:
         self.___sub.join(1)
         self.___querier.join(1)
         self.___stats.join(1)
+        self.___session.close()

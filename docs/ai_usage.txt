@@ -1,4 +1,6 @@
 AI (Anthropic) has been used to:
-- investigate the examples of Zenoh
-- investigate the capabilities of Zenoh for long range communication via Serial using LoRa.
-- investigate the workings of Aereostatic Baloons (frequency of readings, comms, common sensors) that are used in the PoC
+- investigate the example usages of Zenoh.
+- investigate the workings of Aereostatic Baloons (frequency of readings, comms, commonly found sensors) that are used in the concept.
+- investigate the capabilities of Zenoh for long range communication via Serial using LoRa (found some resources listed in docs/resources.txt).
+- implementation of the webview for our python backend (terminal was messy).
+- bug hunting

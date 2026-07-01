@@ -1,2 +1,7 @@
 https://gitlab.eclipse.org/eclipse-research-labs
 https://gitlab.eclipse.org/eclipse-research-labs/o-cei-project
+
+- LoRa Serial related
+https://zenodo.org/records/17735730
+https://github.com/eclipse-zenoh/roadmap/discussions/137 
+https://zenoh.io/blog/2022-08-12-zenoh-serial/

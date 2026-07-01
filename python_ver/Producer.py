@@ -76,32 +76,31 @@ class Producer:
             random.randrange(0, 1_834)
         )
         self.___stop = threading.Event()
-        self.___pub = threading.Thread(target=lambda: self.run_pub(conf), daemon=True)
-        self.___query = threading.Thread(target=lambda: self.run_queryable(conf), daemon=True)
+        self.___session = zenoh.open(conf)
+        self.___pub = threading.Thread(target=self.run_pub, daemon=True)
+        self.___query = threading.Thread(target=self.run_queryable, daemon=True)
         self.___pub.start()
         self.___query.start()
 
     def channel(self):
         return self.__channel
 
-    def run_pub(self, config):
-        with zenoh.open(config) as session:
-            pub = session.declare_publisher(self.__base_channel)
-            while not self.___stop.wait(1):
-                payload = self.___product.product()
-                pub.put(payload)
-                BUS.publish("producer", self.__channel, payload)
+    def run_pub(self):
+        pub = self.___session.declare_publisher(self.__base_channel)
+        while not self.___stop.wait(1):
+            payload = self.___product.product()
+            pub.put(payload)
+            BUS.publish("producer", self.__channel, payload)
 
-    def run_queryable(self, config):
-        with zenoh.open(config) as session:
-            queryable = session.declare_queryable(self.__channel)
-            while not self.___stop.is_set():
-                query = queryable.try_recv()
-                if query is None:
-                    time.sleep(0.1)
-                    continue
-                with query:
-                    query.reply(self.__channel, self.___product.product())
+    def run_queryable(self):
+        queryable = self.___session.declare_queryable(self.__channel)
+        while not self.___stop.is_set():
+            query = queryable.try_recv()
+            if query is None:
+                time.sleep(0.1)
+                continue
+            with query:
+                query.reply(self.__channel, self.___product.product())
 
     def signal(self):
         self.___stop.set()
@@ -110,6 +109,7 @@ class Producer:
         self.___stop.set()
         self.___pub.join(1)
         self.___query.join(1)
+        self.___session.close()
 
 
 if __name__ == "__main__":
