@@ -41,6 +41,10 @@ def stop_system():
         if not ___state["running"]:
             return
         for p in ___state["producers"]:
+            p.signal()
+        for r in ___state["receivers"]:
+            r.signal()
+        for p in ___state["producers"]:
             p.close()
         for r in ___state["receivers"]:
             r.close()

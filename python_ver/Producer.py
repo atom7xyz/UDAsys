@@ -87,8 +87,7 @@ class Producer:
     def run_pub(self, config):
         with zenoh.open(config) as session:
             pub = session.declare_publisher(self.__base_channel)
-            while not self.___stop.is_set():
-                time.sleep(1)
+            while not self.___stop.wait(1):
                 payload = self.___product.product()
                 pub.put(payload)
                 BUS.publish("producer", self.__channel, payload)
@@ -103,6 +102,9 @@ class Producer:
                     continue
                 with query:
                     query.reply(self.__channel, self.___product.product())
+
+    def signal(self):
+        self.___stop.set()
 
     def close(self):
         self.___stop.set()

@@ -1,5 +1,4 @@
 const MAX_LINES = 500;
-const MAX_POINTS = 200;
 const FIELDS = ["wind_dir", "wind_speed", "humidity", "temperature", "air_pressure", "height"];
 
 const els = {
@@ -10,14 +9,11 @@ const els = {
     input: document.getElementById("input"),
     send: document.getElementById("send"),
     presets: document.getElementById("presets"),
-    metric: document.getElementById("metric"),
-    chart: document.getElementById("chart"),
     toggle: document.getElementById("toggle"),
 };
 
 let socket = null;
 let running = false;
-const history = {};
 
 function fmtTime(ts) {
     if (!ts) return "";
@@ -64,49 +60,6 @@ function setRunning(state) {
     els.toggle.className = `toggle ${state ? "running" : "stopped"}`;
 }
 
-const chart = echarts.init(els.chart);
-
-function baseOption() {
-    return {
-        backgroundColor: "transparent",
-        textStyle: { fontFamily: "monospace", color: "#7d8795" },
-        tooltip: { trigger: "axis" },
-        legend: { top: 0, textStyle: { color: "#7d8795" } },
-        grid: { left: 55, right: 15, top: 30, bottom: 25 },
-        xAxis: { type: "time", axisLabel: { color: "#7d8795" }, axisLine: { lineStyle: { color: "#2a313c" } } },
-        yAxis: {
-            type: "value",
-            scale: true,
-            axisLabel: { color: "#7d8795" },
-            splitLine: { lineStyle: { color: "#2a313c" } },
-        },
-        series: [],
-    };
-}
-
-function renderChart() {
-    const metric = els.metric.value;
-    const series = Object.keys(history)
-        .sort()
-        .map((channel) => ({
-            name: channel,
-            type: "line",
-            showSymbol: false,
-            data: history[channel].map((r) => [r.timestamp * 1000, r[metric]]),
-        }));
-    chart.setOption({ series }, { replaceMerge: ["series"] });
-}
-
-function record(channel, payload) {
-    const row = parse(payload);
-    if (!row) return;
-    if (!history[channel]) history[channel] = [];
-    const buf = history[channel];
-    buf.push(row);
-    while (buf.length > MAX_POINTS) buf.shift();
-    renderChart();
-}
-
 function connect() {
     const proto = location.protocol === "https:" ? "wss" : "ws";
     socket = new WebSocket(`${proto}://${location.host}/ws`);
@@ -118,10 +71,8 @@ function connect() {
     socket.onmessage = (ev) => {
         const msg = JSON.parse(ev.data);
         if (msg.kind === "producer") append("producers", msg, "producer");
-        else if (msg.kind === "receiver") {
-            append("receivers", msg, "receiver");
-            record(msg.channel, msg.payload);
-        } else if (msg.kind === "query") {
+        else if (msg.kind === "receiver") append("receivers", msg, "receiver");
+        else if (msg.kind === "query") {
             const now = Math.floor(Date.now() / 1000);
             if (msg.replies.length === 0)
                 append("results", { channel: msg.channel, payload: "ERR: no reply", timestamp: now });
@@ -170,24 +121,11 @@ async function loadPresets() {
         const data = await res.json();
         data.channels.forEach((c) => cities.add(c.split("/").slice(0, -1).join("/")));
         cities.forEach((city) => addPreset(`${city}/*`, `${city}/**`));
+        cities.forEach((city) => addPreset(`stats ${city}`, `stats/${city}?window=60`));
         data.channels.forEach((c) => addPreset(c, c));
     } catch (e) {
         console.error("presets", e);
     }
-}
-
-function initMetrics() {
-    FIELDS.forEach((f) => {
-        const o = document.createElement("option");
-        o.value = f;
-        o.textContent = f;
-        els.metric.appendChild(o);
-    });
-    els.metric.value = "temperature";
-    els.metric.addEventListener("change", () => {
-        chart.setOption(baseOption());
-        renderChart();
-    });
 }
 
 els.toggle.addEventListener("click", async () => {
@@ -211,9 +149,6 @@ async function initStatus() {
     }
 }
 
-initMetrics();
-chart.setOption(baseOption());
-window.addEventListener("resize", () => chart.resize());
 initStatus();
 loadPresets();
 connect();
