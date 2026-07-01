@@ -1,5 +1,6 @@
 import asyncio
 import os
+from threading import Lock
 
 import zenoh
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -15,24 +16,49 @@ CONFIG = os.environ.get("ZENOH_CONFIG", os.path.join(HERE, "config.json"))
 
 app = FastAPI(title="UDAsys webview")
 
-___state = {}
+___state = {"producers": [], "receivers": [], "session": None, "running": False}
+___lock = Lock()
 
 
 def load_config() -> zenoh.Config:
     return zenoh.Config.from_file(CONFIG) if os.path.exists(CONFIG) else zenoh.Config()
 
 
+def start_system():
+    with ___lock:
+        if ___state["running"]:
+            return
+        Producer.Producer.__init__.__defaults__[0][0] = 0
+        producers, receivers = Producer.main(load_config())
+        ___state["producers"] = producers
+        ___state["receivers"] = receivers
+        ___state["running"] = True
+    BUS.publish("status", "", "running")
+
+
+def stop_system():
+    with ___lock:
+        if not ___state["running"]:
+            return
+        for p in ___state["producers"]:
+            p.close()
+        for r in ___state["receivers"]:
+            r.close()
+        ___state["producers"] = []
+        ___state["receivers"] = []
+        ___state["running"] = False
+    BUS.publish("status", "", "stopped")
+
+
 @app.on_event("startup")
 def startup():
-    producers, receivers = Producer.main(load_config())
-    session = zenoh.open(load_config())
-    ___state["producers"] = producers
-    ___state["receivers"] = receivers
-    ___state["session"] = session
+    ___state["session"] = zenoh.open(load_config())
+    start_system()
 
 
 @app.on_event("shutdown")
 def shutdown():
+    stop_system()
     session = ___state.get("session")
     if session is not None:
         session.close()
@@ -53,6 +79,23 @@ def do_query(selector: str):
 def channels():
     producers = ___state.get("producers", [])
     return {"channels": sorted(p.channel() for p in producers)}
+
+
+@app.get("/api/status")
+def status():
+    return {"running": ___state["running"]}
+
+
+@app.post("/api/start")
+async def start():
+    await asyncio.get_event_loop().run_in_executor(None, start_system)
+    return {"running": ___state["running"]}
+
+
+@app.post("/api/stop")
+async def stop():
+    await asyncio.get_event_loop().run_in_executor(None, stop_system)
+    return {"running": ___state["running"]}
 
 
 @app.get("/")

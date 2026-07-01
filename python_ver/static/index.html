@@ -10,6 +10,7 @@
     <header>
         <h1>UDAsys</h1>
         <span id="status" class="status offline">offline</span>
+        <button id="toggle" class="toggle">stop</button>
     </header>
 
     <main>
@@ -21,24 +22,33 @@
             <div class="log" id="producers"></div>
         </section>
 
-        <section class="console" id="consumers-panel">
+        <section class="console" id="receivers-panel">
             <div class="console-head">
-                <h2>Consumers</h2>
-                <button class="clear" data-target="consumers">clear</button>
+                <h2>Receivers</h2>
+                <button class="clear" data-target="receivers">clear</button>
             </div>
-            <div class="log" id="consumers"></div>
+            <div class="log" id="receivers"></div>
+        </section>
+
+        <section class="console" id="chart-panel">
+            <div class="console-head">
+                <h2>Chart</h2>
+                <select id="metric"></select>
+            </div>
+            <div class="chart" id="chart"></div>
         </section>
 
         <section class="command">
             <div class="presets" id="presets"></div>
             <div class="prompt">
-                <textarea id="input" rows="2" placeholder="query sardegna/cagliari/1"></textarea>
+                <textarea id="input" rows="2" placeholder="sardegna/cagliari/1"></textarea>
                 <button id="send">query</button>
             </div>
             <div class="log" id="results"></div>
         </section>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
     <script src="/static/app.js"></script>
 </body>
 </html>

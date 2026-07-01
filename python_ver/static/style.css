@@ -43,10 +43,16 @@ header h1 { margin: 0; font-size: 16px; letter-spacing: 2px; }
 .status.online { background: rgba(110, 231, 168, .15); color: var(--producer); }
 .status.offline { background: rgba(255, 110, 110, .15); color: var(--err); }
 
+.toggle { margin-left: auto; }
+.toggle.running { color: var(--err); border-color: var(--err); }
+.toggle.running:hover { color: var(--err); }
+.toggle.stopped { color: var(--producer); border-color: var(--producer); }
+.toggle.stopped:hover { color: var(--producer); }
+
 main {
     flex: 1;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     grid-template-rows: 1fr 1fr;
     gap: 10px;
     padding: 10px;
@@ -63,10 +69,16 @@ main {
     min-height: 0;
 }
 #producers-panel { grid-column: 1; }
-#consumers-panel { grid-column: 2; }
+#receivers-panel { grid-column: 2; }
+#chart-panel { grid-column: 3; }
+
+.chart {
+    flex: 1;
+    min-height: 0;
+}
 
 .command {
-    grid-column: 1 / span 2;
+    grid-column: 1 / span 3;
     grid-row: 2;
     display: flex;
     flex-direction: column;
@@ -93,8 +105,9 @@ main {
 }
 
 .line { display: flex; gap: 8px; }
-.line .ts { color: var(--muted); }
-.line .chan { color: var(--accent); }
+.line .ts { color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+.line .chan { color: var(--accent); white-space: nowrap; flex-shrink: 0; }
+.line .msg { min-width: 0; }
 .line.producer .chan { color: var(--producer); }
 .line.consumer .chan { color: var(--consumer); }
 .line.err .msg { color: var(--err); }
@@ -123,10 +136,11 @@ textarea {
 textarea:focus { outline: 1px solid var(--accent); }
 
 .command .log {
+    flex: 1;
+    min-height: 0;
     background: var(--panel);
     border: 1px solid var(--border);
     border-radius: 8px;
-    max-height: 30%;
 }
 
 button {
@@ -144,3 +158,15 @@ button.clear { padding: 2px 8px; font-size: 11px; }
 #send { background: var(--accent); color: #0e1116; border-color: var(--accent); font-weight: 600; }
 #send:hover { filter: brightness(1.1); }
 .preset { color: var(--muted); }
+
+select {
+    background: #21262d;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    cursor: pointer;
+}
+select:focus { outline: 1px solid var(--accent); }
