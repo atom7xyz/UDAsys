@@ -6,13 +6,15 @@ from traceback import print_exception
 
 import zenoh
 
+from bus import BUS
+
 
 class Receiver:
     def __init__(self, conf: zenoh.Config, root: str, max_buf_size: int = 10_000):
         self.___buffer = []
         self.__base_channel = root
-        self.___sub = threading.Thread(target=lambda: self.run_subscriber(conf))
-        self.___querier = threading.Thread(target=lambda: self.run_querier(conf))
+        self.___sub = threading.Thread(target=lambda: self.run_subscriber(conf), daemon=True)
+        self.___querier = threading.Thread(target=lambda: self.run_querier(conf), daemon=True)
         self.___sem = Semaphore()
         self.___sub.start()
         self.___querier.start()
@@ -28,6 +30,7 @@ class Receiver:
         self.ensure_size()
         print(f"{self.__base_channel}: {payload}")
         self.___sem.release()
+        BUS.publish("consumer", self.__base_channel, payload)
 
     def run_querier(self, config):
         with zenoh.open(config) as session:

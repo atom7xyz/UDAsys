@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UDAsys — sensor grid</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <h1>UDAsys</h1>
+        <span id="status" class="status offline">offline</span>
+    </header>
+
+    <main>
+        <section class="console" id="producers-panel">
+            <div class="console-head">
+                <h2>Producers</h2>
+                <button class="clear" data-target="producers">clear</button>
+            </div>
+            <div class="log" id="producers"></div>
+        </section>
+
+        <section class="console" id="consumers-panel">
+            <div class="console-head">
+                <h2>Consumers</h2>
+                <button class="clear" data-target="consumers">clear</button>
+            </div>
+            <div class="log" id="consumers"></div>
+        </section>
+
+        <section class="command">
+            <div class="presets" id="presets"></div>
+            <div class="prompt">
+                <textarea id="input" rows="2" placeholder="query sardegna/cagliari/1"></textarea>
+                <button id="send">query</button>
+            </div>
+            <div class="log" id="results"></div>
+        </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

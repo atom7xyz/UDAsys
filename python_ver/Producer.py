@@ -7,6 +7,8 @@ from typing import Optional
 import numpy
 import zenoh
 
+from bus import BUS
+
 
 def main(config: zenoh.Config):
     import Receiver
@@ -27,6 +29,8 @@ def main(config: zenoh.Config):
             receivers.append(Receiver.Receiver(config, f"{k}/{k2}"))
             for v in range(map[k][k2]):
                 producers.append(create_producer(config, f"{k}/{k2}"))
+
+    return producers, receivers
 
 
 
@@ -71,17 +75,22 @@ class Producer:
             random.randrange(870, 1085),
             random.randrange(0, 1_834)
         )
-        self.___pub = threading.Thread(target=lambda: self.run_pub(conf))
-        self.___query = threading.Thread(target=lambda: self.run_queryable(conf))
+        self.___pub = threading.Thread(target=lambda: self.run_pub(conf), daemon=True)
+        self.___query = threading.Thread(target=lambda: self.run_queryable(conf), daemon=True)
         self.___pub.start()
         self.___query.start()
+
+    def channel(self):
+        return self.__channel
 
     def run_pub(self, config):
         with zenoh.open(config) as session:
             pub = session.declare_publisher(self.__base_channel)
             while True:
                 time.sleep(1)
-                pub.put(self.___product.product())
+                payload = self.___product.product()
+                pub.put(payload)
+                BUS.publish("producer", self.__channel, payload)
 
     def run_queryable(self, config):
         with zenoh.open(config) as session:
