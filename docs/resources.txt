@@ -1,0 +1,2 @@
+https://gitlab.eclipse.org/eclipse-research-labs
+https://gitlab.eclipse.org/eclipse-research-labs/o-cei-project
