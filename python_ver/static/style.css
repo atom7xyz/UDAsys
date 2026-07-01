@@ -43,11 +43,29 @@ header h1 { margin: 0; font-size: 16px; letter-spacing: 2px; }
 .status.online { background: rgba(110, 231, 168, .15); color: var(--producer); }
 .status.offline { background: rgba(255, 110, 110, .15); color: var(--err); }
 
-.toggle { margin-left: auto; }
+.toggle { margin-left: auto; min-width: 64px; text-align: center; }
 .toggle.running { color: var(--err); border-color: var(--err); }
 .toggle.running:hover { color: var(--err); }
 .toggle.stopped { color: var(--producer); border-color: var(--producer); }
 .toggle.stopped:hover { color: var(--producer); }
+.toggle.loading { cursor: default; border-color: var(--border); }
+.toggle:disabled { cursor: default; }
+
+.spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    vertical-align: middle;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+button.loading { cursor: default; }
+button.loading .spinner { vertical-align: middle; }
+#send.loading .spinner { border-color: rgba(14, 17, 22, .35); border-top-color: #0e1116; }
 
 main {
     flex: 1;
