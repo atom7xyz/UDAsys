@@ -24,7 +24,7 @@ class Receiver:
 
     def write(self, payload: str):
         self.___sem.acquire()
-        self.___buffer.append(payload)
+        self.___buffer.insert(0, payload)
         self.ensure_size()
         print(f"{self.__base_channel}: {payload}")
         self.___sem.release()
